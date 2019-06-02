@@ -13,8 +13,8 @@ fun subNodes(elementType: ElementType, node: Node): List<Node> = when (elementTy
 }
 
 fun subNodes(elementTypes: List<ElementType>, node: Node): Tree<Node> = when {
-    elementTypes.isEmpty() -> Leaf(node)
-    else -> Node(subNodes(elementTypes[0], node).map { subNodes(elementTypes.drop(1), it) })
+    elementTypes.isEmpty() -> leaf(node)
+    else -> tree(node, subNodes(elementTypes[0], node).map { subNodes(elementTypes.drop(1), it) })
 }
 
 fun processCommand(compilationUnit: CompilationUnit, command: Command) = when (command) {
