@@ -4,6 +4,9 @@ import com.github.h0tk3y.betterParse.grammar.parseToEnd
 import com.github.javaparser.StaticJavaParser
 import com.github.javaparser.ast.CompilationUnit
 import com.github.javaparser.ast.Node
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration
+import com.github.javaparser.ast.body.FieldDeclaration
+import com.github.javaparser.ast.body.MethodDeclaration
 
 fun subNodes(elementType: ElementType, node: Node): List<Node> = when (elementType) {
     ElementType.Class -> JavaAccessors.classes(node)
@@ -27,6 +30,7 @@ val code = """
       private String c;
       private static class D {
         private int e;
+        private int q;
       }
       public static int method1() { return 0; }
       private void method2(String p1) { }
@@ -46,8 +50,21 @@ val code = """
     }
     """.trimIndent()
 
+fun oneLineInfo(node: Node): String = when (node) {
+    is ClassOrInterfaceDeclaration -> (if (node.isPublic) "public " else "") +
+            (if (node.isPrivate) "private " else "") +
+            (if (node.isProtected) "protected " else "") +
+            (if(node.isInterface) "interface " else "class ") +
+            node.nameAsString
+    is CompilationUnit -> "CompilationUnit"
+    is FieldDeclaration -> node.toString()
+    is MethodDeclaration -> node.getDeclarationAsString(true, true, false)
+    else -> node.toString()
+}
+
 fun main() {
-    val result: Command = CommandParser.parseToEnd("list class interface method")
+    val command: Command = CommandParser.parseToEnd("list class interface method")
     val compilationUnit = StaticJavaParser.parse(code)
-    println(processCommand(compilationUnit, result))
+    val tree = processCommand(compilationUnit, command)
+    print(ppTree(tree, { oneLineInfo(it) }))
 }
