@@ -2,9 +2,11 @@ package fboeller
 
 import com.github.h0tk3y.betterParse.combinators.*
 import com.github.h0tk3y.betterParse.grammar.Grammar
+import fboeller.CommandParser.getValue
+import fboeller.CommandParser.provideDelegate
 
 enum class ElementType {
-    Class, Field
+    Class, Field, Method
 }
 
 sealed class Command
@@ -15,7 +17,10 @@ object CommandParser : Grammar<Command>() {
     val LIST by token("list")
     val CLASS by token("class")
     val FIELD by token("field")
-    val elementType by (CLASS use { ElementType.Class }) or (FIELD use { ElementType.Field })
+    val METHOD by token("method")
+    val elementType by (CLASS use { ElementType.Class }) or
+            (FIELD use { ElementType.Field }) or
+            (METHOD use { ElementType.Method })
 
     val commandParser by LIST and zeroOrMore(elementType) map { ListCmd(it.t2) }
 
