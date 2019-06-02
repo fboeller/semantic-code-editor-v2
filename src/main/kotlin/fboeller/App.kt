@@ -9,6 +9,7 @@ fun subNodes(elementType: ElementType, node: Node): List<Node> = when (elementTy
     ElementType.Class -> JavaAccessors.classes(node)
     ElementType.Field -> JavaAccessors.fields(node)
     ElementType.Method -> JavaAccessors.methods(node)
+    ElementType.Interface -> JavaAccessors.interfaces(node)
 }
 
 fun subNodes(elementTypes: List<ElementType>, node: Node): Tree<Node> = when {
@@ -29,11 +30,24 @@ val code = """
       }
       public static int method1() { return 0; }
       private void method2(String p1) { }
+      protected interface E {
+        int f();
+        boolean g();
+        default String h() {
+          try {
+            return "abc";
+          } catch(Exception e) {
+            // Ignore
+          } finally {
+            System.out.println("Hello World!");
+          }
+        }
+      }
     }
     """.trimIndent()
 
 fun main() {
-    val result: Command = CommandParser.parseToEnd("list class method")
+    val result: Command = CommandParser.parseToEnd("list class interface method")
     val compilationUnit = StaticJavaParser.parse(code)
     println(processCommand(compilationUnit, result))
 }

@@ -20,6 +20,18 @@ object JavaAccessors {
         else -> listOf()
     }
 
+    fun interfaces(node: Node): List<ClassOrInterfaceDeclaration> = when (node) {
+        is ClassOrInterfaceDeclaration ->
+            node.members
+                    .filterIsInstance<ClassOrInterfaceDeclaration>()
+                    .filter { it.isInterface }
+        is CompilationUnit ->
+            node.types
+                    .filterIsInstance<ClassOrInterfaceDeclaration>()
+                    .filter { it.isInterface }
+        else -> listOf()
+    }
+
     fun fields(node: Node): List<FieldDeclaration> = when (node) {
         is ClassOrInterfaceDeclaration -> node.fields
         is CompilationUnit -> listOf()
