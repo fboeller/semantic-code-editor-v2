@@ -98,7 +98,9 @@ fun repl(project: Project) {
             } else if (line.trim().isNotEmpty()) {
                 val command = CommandParser.parseToEnd(line)
                 appState = appState.copy(result = processCommand(project, command))
-                appState.result.forEach { writer.print(ppTree(it, { data -> oneLineInfo(data) })) }
+                appState.result
+                        .mapIndexed { index, tree -> ppTree(tree, { oneLineInfo(it) }, 0, index) }
+                        .forEach { writer.print(it) }
             }
         } catch (e: UserInterruptException) {
             // Ignore
