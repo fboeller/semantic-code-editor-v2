@@ -10,7 +10,7 @@ enum class ElementType {
 }
 
 sealed class Command
-data class ListCmd(val elementTypes: List<ElementType>) : Command()
+data class ListCmd(val elementTypes: List<Set<ElementType>>) : Command()
 
 object CommandParser : Grammar<Command>() {
     val ws by token("\\s+", ignore = true)
@@ -19,10 +19,12 @@ object CommandParser : Grammar<Command>() {
     val FIELD by token("field")
     val METHOD by token("method")
     val INTERFACE by token("interface")
-    val elementType by (CLASS use { ElementType.Class }) or
-            (FIELD use { ElementType.Field }) or
-            (METHOD use { ElementType.Method }) or
-            (INTERFACE use { ElementType.Interface })
+    val ALL by token("\\*")
+    val elementType by (CLASS use { setOf(ElementType.Class) }) or
+            (FIELD use { setOf(ElementType.Field) }) or
+            (METHOD use { setOf(ElementType.Method) }) or
+            (INTERFACE use { setOf(ElementType.Interface) }) or
+            (ALL use { ElementType.values().toSet() })
 
     val commandParser by LIST and zeroOrMore(elementType) map { ListCmd(it.t2) }
 

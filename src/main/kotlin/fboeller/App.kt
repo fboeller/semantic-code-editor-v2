@@ -7,21 +7,26 @@ import com.github.javaparser.ast.Node
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration
 import com.github.javaparser.ast.body.FieldDeclaration
 import com.github.javaparser.ast.body.MethodDeclaration
+import javax.xml.bind.Element
 
-fun subNodes(elementType: ElementType, node: Node): List<Node> = when (elementType) {
-    ElementType.Class -> JavaAccessors.classes(node)
-    ElementType.Field -> JavaAccessors.fields(node)
-    ElementType.Method -> JavaAccessors.methods(node)
-    ElementType.Interface -> JavaAccessors.interfaces(node)
+fun subNodesOfType(elementType: ElementType): (Node) -> List<Node> = when (elementType) {
+    ElementType.Class -> JavaAccessors::classes
+    ElementType.Field -> JavaAccessors::fields
+    ElementType.Method -> JavaAccessors::methods
+    ElementType.Interface -> JavaAccessors::interfaces
 }
 
-fun subNodes(elementTypes: List<ElementType>, node: Node): Tree<Node> = when {
+fun subNodesOfTypes(elementTypes: Set<ElementType>): (Node) -> List<Node> = {
+    node -> elementTypes.flatMap { subNodesOfType(it)(node) }
+}
+
+fun subNodeTree(elementTypes: List<Set<ElementType>>, node: Node): Tree<Node> = when {
     elementTypes.isEmpty() -> leaf(node)
-    else -> tree(node, subNodes(elementTypes[0], node).map { subNodes(elementTypes.drop(1), it) })
+    else -> tree(node, subNodesOfTypes(elementTypes[0])(node).map { subNodeTree(elementTypes.drop(1), it) })
 }
 
-fun processCommand(compilationUnit: CompilationUnit, command: Command) = when (command) {
-    is ListCmd -> subNodes(command.elementTypes, compilationUnit)
+fun processCommand(compilationUnit: CompilationUnit, command: Command): Tree<Node> = when (command) {
+    is ListCmd -> subNodeTree(command.elementTypes, compilationUnit)
 }
 
 val code = """
@@ -54,7 +59,7 @@ fun oneLineInfo(node: Node): String = when (node) {
     is ClassOrInterfaceDeclaration -> (if (node.isPublic) "public " else "") +
             (if (node.isPrivate) "private " else "") +
             (if (node.isProtected) "protected " else "") +
-            (if(node.isInterface) "interface " else "class ") +
+            (if (node.isInterface) "interface " else "class ") +
             node.nameAsString
     is CompilationUnit -> "CompilationUnit"
     is FieldDeclaration -> node.toString()
@@ -63,7 +68,7 @@ fun oneLineInfo(node: Node): String = when (node) {
 }
 
 fun main() {
-    val command: Command = CommandParser.parseToEnd("list class interface method")
+    val command: Command = CommandParser.parseToEnd("list * * *")
     val compilationUnit = StaticJavaParser.parse(code)
     val tree = processCommand(compilationUnit, command)
     print(ppTree(tree, { oneLineInfo(it) }))
