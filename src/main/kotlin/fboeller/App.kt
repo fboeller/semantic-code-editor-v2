@@ -95,7 +95,7 @@ fun repl(project: Project) {
             var line = reader.readLine("> ")
             if (line == "quit" || line == "exit") {
                 running = false
-            } else {
+            } else if (line.isNotEmpty()) {
                 val command = CommandParser.parseToEnd(line)
                 val treeList = processCommand(project, command)
                 treeList.forEach { writer.print(ppTree(it, { data -> oneLineInfo(data) })) }
