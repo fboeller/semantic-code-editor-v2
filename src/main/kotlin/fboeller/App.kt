@@ -7,6 +7,7 @@ import com.github.javaparser.ast.Node
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration
 import com.github.javaparser.ast.body.FieldDeclaration
 import com.github.javaparser.ast.body.MethodDeclaration
+import java.nio.file.Paths
 import javax.xml.bind.Element
 
 fun subNodesOfType(elementType: ElementType): (Node) -> List<Node> = when (elementType) {
@@ -25,8 +26,8 @@ fun subNodeTree(elementTypes: List<Set<ElementType>>, node: Node): Tree<Node> = 
     else -> tree(node, subNodesOfTypes(elementTypes[0])(node).map { subNodeTree(elementTypes.drop(1), it) })
 }
 
-fun processCommand(compilationUnit: CompilationUnit, command: Command): Tree<Node> = when (command) {
-    is ListCmd -> subNodeTree(command.elementTypes, compilationUnit)
+fun processCommand(project: Project, command: Command): List<Tree<Node>> = when (command) {
+    is ListCmd -> project.compilationUnits.map { subNodeTree(command.elementTypes, it) }
 }
 
 val code = """
@@ -68,8 +69,8 @@ fun oneLineInfo(node: Node): String = when (node) {
 }
 
 fun main() {
-    val command: Command = CommandParser.parseToEnd("list * * *")
-    val compilationUnit = StaticJavaParser.parse(code)
-    val tree = processCommand(compilationUnit, command)
-    print(ppTree(tree, { oneLineInfo(it) }))
+    val command: Command = CommandParser.parseToEnd("list * method")
+    val project = ProjectParser.readDirectory(Paths.get("/home/fboeller/src/java-design-patterns/flyweight/src/main/java/com/iluwatar"))
+    val treeList = processCommand(project, command)
+    treeList.forEach { print(ppTree(it, { oneLineInfo(it) })) }
 }
