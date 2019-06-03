@@ -25,8 +25,8 @@ fun subNodesOfType(elementType: ElementType): (Node) -> List<Node> = when (eleme
     ElementType.Enum -> JavaAccessors::enums
 }
 
-fun subNodesOfTypes(elementTypes: Set<ElementType>): (Node) -> List<Node> = {
-    node -> elementTypes.flatMap { subNodesOfType(it)(node) }
+fun subNodesOfTypes(elementTypes: Set<ElementType>): (Node) -> List<Node> = { node ->
+    elementTypes.flatMap { subNodesOfType(it)(node) }
 }
 
 fun subNodeTree(elementTypes: List<Set<ElementType>>, node: Node): Tree<Node> = when {
@@ -89,7 +89,7 @@ fun repl(project: Project) {
             .terminal(terminal)
             .build()
     val writer = terminal.writer()
-    var appState = AppState(project, true)
+    var appState = AppState(project, true, listOf())
     while (appState.running) {
         try {
             var line = reader.readLine("> ")
@@ -97,8 +97,8 @@ fun repl(project: Project) {
                 appState = appState.copy(running = false)
             } else if (line.trim().isNotEmpty()) {
                 val command = CommandParser.parseToEnd(line)
-                val treeList = processCommand(project, command)
-                treeList.forEach { writer.print(ppTree(it, { data -> oneLineInfo(data) })) }
+                appState = appState.copy(result = processCommand(project, command))
+                appState.result.forEach { writer.print(ppTree(it, { data -> oneLineInfo(data) })) }
             }
         } catch (e: UserInterruptException) {
             // Ignore
