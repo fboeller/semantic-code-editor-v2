@@ -69,7 +69,7 @@ fun oneLineInfo(node: Node): String = when (node) {
             (if (node.isProtected) "protected " else "") +
             "enum " +
             node.nameAsString
-    is CompilationUnit -> "CompilationUnit"
+    is CompilationUnit -> node.packageDeclaration.map { it.nameAsString }.orElse("default package")
     is FieldDeclaration -> node.toString()
     is MethodDeclaration -> node.getDeclarationAsString(true, true, false)
     else -> node.toString()
