@@ -29,7 +29,9 @@ fun subNodeTree(elementTypes: List<Set<ElementType>>, node: Node): Tree<Node> = 
 }
 
 fun processCommand(project: Project, command: Command): List<Tree<Node>> = when (command) {
-    is ListCmd -> project.compilationUnits.map { subNodeTree(command.elementTypes, it) }
+    is ListCmd -> project.compilationUnits
+            .map { subNodeTree(command.elementTypes, it) }
+            .filter { it.children.isNotEmpty() }
 }
 
 val code = """
