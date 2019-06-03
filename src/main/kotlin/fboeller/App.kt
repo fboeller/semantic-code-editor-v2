@@ -12,6 +12,7 @@ import com.google.common.io.LineReader
 import org.jline.reader.EndOfFileException
 import org.jline.reader.LineReaderBuilder
 import org.jline.reader.UserInterruptException
+import org.jline.terminal.TerminalBuilder
 import java.nio.file.Paths
 import java.util.*
 import javax.xml.bind.Element
@@ -83,13 +84,22 @@ fun oneLineInfo(node: Node): String = when (node) {
 }
 
 fun repl(project: Project) {
-    var reader = LineReaderBuilder.builder().build()
-    while (true) {
+    val terminal = TerminalBuilder.terminal();
+    val reader = LineReaderBuilder.builder()
+            .terminal(terminal)
+            .build()
+    val writer = terminal.writer()
+    var running = true
+    while (running) {
         try {
             var line = reader.readLine("> ")
-            val command = CommandParser.parseToEnd(line)
-            val treeList = processCommand(project, command)
-            treeList.forEach { print(ppTree(it, { oneLineInfo(it) })) }
+            if (line == "quit" || line == "exit") {
+                running = false
+            } else {
+                val command = CommandParser.parseToEnd(line)
+                val treeList = processCommand(project, command)
+                treeList.forEach { writer.print(ppTree(it, { data -> oneLineInfo(data) })) }
+            }
         } catch (e: UserInterruptException) {
             // Ignore
         } catch (e: EndOfFileException) {
