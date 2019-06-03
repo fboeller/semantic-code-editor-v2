@@ -89,7 +89,7 @@ fun repl(project: Project) {
             .terminal(terminal)
             .build()
     val writer = terminal.writer()
-    var appState = AppState(project, true, listOf())
+    var appState = AppState(project, true, listOf(), listOf())
     while (appState.running) {
         try {
             var line = reader.readLine("> ")
