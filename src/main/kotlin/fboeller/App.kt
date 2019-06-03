@@ -89,13 +89,13 @@ fun repl(project: Project) {
             .terminal(terminal)
             .build()
     val writer = terminal.writer()
-    var running = true
-    while (running) {
+    var appState = AppState(project, true)
+    while (appState.running) {
         try {
             var line = reader.readLine("> ")
             if (line == "quit" || line == "exit") {
-                running = false
-            } else if (line.isNotEmpty()) {
+                appState = appState.copy(running = false)
+            } else if (line.trim().isNotEmpty()) {
                 val command = CommandParser.parseToEnd(line)
                 val treeList = processCommand(project, command)
                 treeList.forEach { writer.print(ppTree(it, { data -> oneLineInfo(data) })) }
