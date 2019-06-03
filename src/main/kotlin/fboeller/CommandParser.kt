@@ -6,7 +6,7 @@ import fboeller.CommandParser.getValue
 import fboeller.CommandParser.provideDelegate
 
 enum class ElementType {
-    Class, Field, Method, Interface
+    Class, Field, Method, Interface, Enum
 }
 
 sealed class Command
@@ -19,11 +19,13 @@ object CommandParser : Grammar<Command>() {
     val FIELD by token("field")
     val METHOD by token("method")
     val INTERFACE by token("interface")
+    val ENUM by token("enum")
     val ALL by token("\\*")
     val elementType by (CLASS use { setOf(ElementType.Class) }) or
             (FIELD use { setOf(ElementType.Field) }) or
             (METHOD use { setOf(ElementType.Method) }) or
             (INTERFACE use { setOf(ElementType.Interface) }) or
+            (ENUM use { setOf(ElementType.Enum) }) or
             (ALL use { ElementType.values().toSet() })
 
     val commandParser by LIST and zeroOrMore(elementType) map { ListCmd(it.t2) }

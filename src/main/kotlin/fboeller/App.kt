@@ -5,6 +5,7 @@ import com.github.javaparser.StaticJavaParser
 import com.github.javaparser.ast.CompilationUnit
 import com.github.javaparser.ast.Node
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration
+import com.github.javaparser.ast.body.EnumDeclaration
 import com.github.javaparser.ast.body.FieldDeclaration
 import com.github.javaparser.ast.body.MethodDeclaration
 import java.nio.file.Paths
@@ -15,6 +16,7 @@ fun subNodesOfType(elementType: ElementType): (Node) -> List<Node> = when (eleme
     ElementType.Field -> JavaAccessors::fields
     ElementType.Method -> JavaAccessors::methods
     ElementType.Interface -> JavaAccessors::interfaces
+    ElementType.Enum -> JavaAccessors::enums
 }
 
 fun subNodesOfTypes(elementTypes: Set<ElementType>): (Node) -> List<Node> = {
@@ -62,6 +64,11 @@ fun oneLineInfo(node: Node): String = when (node) {
             (if (node.isProtected) "protected " else "") +
             (if (node.isInterface) "interface " else "class ") +
             node.nameAsString
+    is EnumDeclaration -> (if (node.isPublic) "public " else "") +
+            (if (node.isPrivate) "private " else "") +
+            (if (node.isProtected) "protected " else "") +
+            "enum " +
+            node.nameAsString
     is CompilationUnit -> "CompilationUnit"
     is FieldDeclaration -> node.toString()
     is MethodDeclaration -> node.getDeclarationAsString(true, true, false)
@@ -69,7 +76,7 @@ fun oneLineInfo(node: Node): String = when (node) {
 }
 
 fun main() {
-    val command: Command = CommandParser.parseToEnd("list * method")
+    val command: Command = CommandParser.parseToEnd("list enum")
     val project = ProjectParser.readDirectory(Paths.get("/home/fboeller/src/java-design-patterns/flyweight/src/main/java/com/iluwatar"))
     val treeList = processCommand(project, command)
     treeList.forEach { print(ppTree(it, { oneLineInfo(it) })) }

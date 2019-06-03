@@ -3,6 +3,7 @@ package fboeller
 import com.github.javaparser.ast.CompilationUnit
 import com.github.javaparser.ast.Node
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration
+import com.github.javaparser.ast.body.EnumDeclaration
 import com.github.javaparser.ast.body.FieldDeclaration
 import com.github.javaparser.ast.body.MethodDeclaration
 
@@ -10,6 +11,10 @@ object JavaAccessors {
 
     fun classes(node: Node): List<ClassOrInterfaceDeclaration> = when (node) {
         is ClassOrInterfaceDeclaration ->
+            node.members
+                    .filterIsInstance<ClassOrInterfaceDeclaration>()
+                    .filter { !it.isInterface }
+        is EnumDeclaration ->
             node.members
                     .filterIsInstance<ClassOrInterfaceDeclaration>()
                     .filter { !it.isInterface }
@@ -25,6 +30,10 @@ object JavaAccessors {
             node.members
                     .filterIsInstance<ClassOrInterfaceDeclaration>()
                     .filter { it.isInterface }
+        is EnumDeclaration ->
+            node.members
+                    .filterIsInstance<ClassOrInterfaceDeclaration>()
+                    .filter { it.isInterface }
         is CompilationUnit ->
             node.types
                     .filterIsInstance<ClassOrInterfaceDeclaration>()
@@ -32,14 +41,26 @@ object JavaAccessors {
         else -> listOf()
     }
 
+    fun enums(node: Node): List<EnumDeclaration> = when (node) {
+        is ClassOrInterfaceDeclaration ->
+            node.members.filterIsInstance<EnumDeclaration>()
+        is EnumDeclaration ->
+            node.members.filterIsInstance<EnumDeclaration>()
+        is CompilationUnit ->
+            node.types.filterIsInstance<EnumDeclaration>()
+        else -> listOf()
+    }
+
     fun fields(node: Node): List<FieldDeclaration> = when (node) {
         is ClassOrInterfaceDeclaration -> node.fields
+        is EnumDeclaration -> node.fields
         is CompilationUnit -> listOf()
         else -> listOf()
     }
 
     fun methods(node: Node): List<MethodDeclaration> = when (node) {
         is ClassOrInterfaceDeclaration -> node.methods
+        is EnumDeclaration -> node.methods
         is CompilationUnit -> listOf()
         else -> listOf()
     }
