@@ -2,8 +2,6 @@ package fboeller
 
 import com.github.h0tk3y.betterParse.combinators.*
 import com.github.h0tk3y.betterParse.grammar.Grammar
-import fboeller.CommandParser.getValue
-import fboeller.CommandParser.provideDelegate
 
 enum class ElementType {
     Class, Field, Method, Interface, Enum
@@ -11,9 +9,12 @@ enum class ElementType {
 
 sealed class Command
 data class ListCmd(val elementTypes: List<Set<ElementType>>) : Command()
+data class FocusCmd(val indexPath: List<Int>) : Command()
 
 object CommandParser : Grammar<Command>() {
     val ws by token("\\s+", ignore = true)
+
+    // List Command
     val LIST by token("list")
     val CLASS by token("class")
     val FIELD by token("field")
@@ -28,7 +29,16 @@ object CommandParser : Grammar<Command>() {
             (ENUM use { setOf(ElementType.Enum) }) or
             (ALL use { ElementType.values().toSet() })
 
-    val commandParser by LIST and zeroOrMore(elementType) map { ListCmd(it.t2) }
+    val listCmd by LIST and zeroOrMore(elementType) map { ListCmd(it.t2) }
 
-    override val rootParser by commandParser
+    // Focus Command
+    val FOCUS by token("focus")
+    val NUMBER by token("\\d+")
+
+    val number by NUMBER use { text.toInt() }
+
+    val focusCmd by FOCUS and zeroOrMore(number) map { FocusCmd(it.t2) }
+
+    // All Commands
+    override val rootParser by listCmd or focusCmd
 }

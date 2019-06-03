@@ -15,3 +15,7 @@ fun <T> ppData(data: T, print: (T) -> String, indentation: Int, index: Int): Str
 fun <T> ppChildren(children: List<Tree<T>>, print: (T) -> String, indentation: Int): String =
         children.mapIndexed { index, tree -> ppTree(tree, print, indentation, index) }
                 .joinToString("")
+
+fun <T> ppTreeList(treeList: List<Tree<T>>, print: (T) -> String): String =
+        treeList.mapIndexed { index, tree -> ppTree(tree, print, 0, index) }
+                .joinToString("")

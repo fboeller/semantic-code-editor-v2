@@ -6,5 +6,6 @@ data class AppState(
         val project: Project,
         val running: Boolean,
         val result: List<Tree<Node>>,
-        val focus: List<Node>
+        val focus: List<Node>,
+        val output: String
 )

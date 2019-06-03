@@ -15,6 +15,7 @@ import org.jline.reader.UserInterruptException
 import org.jline.terminal.TerminalBuilder
 import java.nio.file.Paths
 import java.util.*
+import java.util.function.Function
 import javax.xml.bind.Element
 
 fun subNodesOfType(elementType: ElementType): (Node) -> List<Node> = when (elementType) {
@@ -34,10 +35,16 @@ fun subNodeTree(elementTypes: List<Set<ElementType>>, node: Node): Tree<Node> = 
     else -> tree(node, subNodesOfTypes(elementTypes[0])(node).map { subNodeTree(elementTypes.drop(1), it) })
 }
 
-fun processCommand(project: Project, command: Command): List<Tree<Node>> = when (command) {
-    is ListCmd -> project.compilationUnits
-            .map { subNodeTree(command.elementTypes, it) }
-            .filter { it.children.isNotEmpty() }
+fun processCommand(command: Command): (AppState) -> AppState = when (command) {
+    is ListCmd -> { appState ->
+        val result = appState.project.compilationUnits
+                .map { subNodeTree(command.elementTypes, it) }
+                .filter { it.children.isNotEmpty() }
+        appState.copy(
+                result = result,
+                output = ppTreeList(result) { oneLineInfo(it) })
+    }
+    is FocusCmd -> { appState -> appState.copy(output = "") }
 }
 
 val code = """
@@ -89,7 +96,7 @@ fun repl(project: Project) {
             .terminal(terminal)
             .build()
     val writer = terminal.writer()
-    var appState = AppState(project, true, listOf(), listOf())
+    var appState = AppState(project, true, listOf(), listOf(), "")
     while (appState.running) {
         try {
             var line = reader.readLine("> ")
@@ -97,10 +104,8 @@ fun repl(project: Project) {
                 appState = appState.copy(running = false)
             } else if (line.trim().isNotEmpty()) {
                 val command = CommandParser.parseToEnd(line)
-                appState = appState.copy(result = processCommand(project, command))
-                appState.result
-                        .mapIndexed { index, tree -> ppTree(tree, { oneLineInfo(it) }, 0, index) }
-                        .forEach { writer.print(it) }
+                appState = processCommand(command)(appState)
+                writer.print(appState.output)
             }
         } catch (e: UserInterruptException) {
             // Ignore
