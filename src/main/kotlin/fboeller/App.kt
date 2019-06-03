@@ -8,7 +8,12 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration
 import com.github.javaparser.ast.body.EnumDeclaration
 import com.github.javaparser.ast.body.FieldDeclaration
 import com.github.javaparser.ast.body.MethodDeclaration
+import com.google.common.io.LineReader
+import org.jline.reader.EndOfFileException
+import org.jline.reader.LineReaderBuilder
+import org.jline.reader.UserInterruptException
 import java.nio.file.Paths
+import java.util.*
 import javax.xml.bind.Element
 
 fun subNodesOfType(elementType: ElementType): (Node) -> List<Node> = when (elementType) {
@@ -77,9 +82,23 @@ fun oneLineInfo(node: Node): String = when (node) {
     else -> node.toString()
 }
 
+fun repl(project: Project) {
+    var reader = LineReaderBuilder.builder().build()
+    while (true) {
+        try {
+            var line = reader.readLine("> ")
+            val command = CommandParser.parseToEnd(line)
+            val treeList = processCommand(project, command)
+            treeList.forEach { print(ppTree(it, { oneLineInfo(it) })) }
+        } catch (e: UserInterruptException) {
+            // Ignore
+        } catch (e: EndOfFileException) {
+            return
+        }
+    }
+}
+
 fun main() {
-    val command: Command = CommandParser.parseToEnd("list enum")
     val project = ProjectParser.readDirectory(Paths.get("/home/fboeller/src/java-design-patterns/flyweight/src/main/java/com/iluwatar"))
-    val treeList = processCommand(project, command)
-    treeList.forEach { print(ppTree(it, { oneLineInfo(it) })) }
+    repl(project)
 }

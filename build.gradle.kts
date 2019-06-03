@@ -15,7 +15,7 @@ plugins {
 repositories {
     // Use jcenter for resolving your dependencies.
     // You can declare any Maven/Ivy/file repository here.
-    jcenter()
+    mavenCentral()
     maven { setUrl("https://dl.bintray.com/hotkeytlt/maven") }
 }
 
@@ -26,6 +26,8 @@ dependencies {
     implementation("com.github.h0tk3y.betterParse:better-parse-jvm:0.4.0-alpha-3")
 
     implementation("com.github.javaparser:javaparser-symbol-solver-core:3.14.3")
+
+    implementation("org.jline:jline:3.11.0")
 
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
