@@ -1,18 +1,25 @@
 package fboeller
 
 interface Tree<T> {
-
     val children: List<Tree<T>>
+    fun retrieve(indices: List<Int>): TreeNode<T>
+}
 
-    fun retrieve(indices: List<Int>): Tree<T> = when {
-        indices.isEmpty() -> this
+data class Root<T>(override val children: List<TreeNode<T>>) : Tree<T> {
+
+    override fun retrieve(indices: List<Int>): TreeNode<T> = when {
+        indices.isEmpty() -> throw RuntimeException("Root can not be retrieved by index")
         else -> children[indices[0]].retrieve(indices.drop(1))
     }
 }
 
-data class Root<T>(override val children: List<TreeNode<T>>) : Tree<T>
+data class TreeNode<T>(val data: T, override val children: List<TreeNode<T>>) : Tree<T> {
 
-data class TreeNode<T>(val data: T, override val children: List<TreeNode<T>>) : Tree<T>
+    override fun retrieve(indices: List<Int>): TreeNode<T> = when {
+        indices.isEmpty() -> this
+        else -> children[indices[0]].retrieve(indices.drop(1))
+    }
+}
 
 fun <T> leaf(data: T) = TreeNode(data, listOf())
 
@@ -24,7 +31,7 @@ fun <T> ppNode(tree: TreeNode<T>, print: (T) -> String, indentation: Int = 0, in
         ppData(tree.data, print, indentation, index) + "\n" + ppChildren(tree.children, print, indentation + 1)
 
 fun <T> ppData(data: T, print: (T) -> String, indentation: Int, index: Int): String =
-        "  ".repeat(indentation) + (index + 1) + ": " + print(data)
+        "  ".repeat(indentation) + index + ": " + print(data)
 
 fun <T> ppChildren(children: List<TreeNode<T>>, print: (T) -> String, indentation: Int): String =
         children.mapIndexed { index, tree -> ppNode(tree, print, indentation, index) }
@@ -32,3 +39,9 @@ fun <T> ppChildren(children: List<TreeNode<T>>, print: (T) -> String, indentatio
 
 fun <T> ppRoot(root: Root<T>, print: (T) -> String): String =
         ppChildren(root.children, print, 0)
+
+fun <T> ppTree(tree: Tree<T>, print: (T) -> String): String = when (tree) {
+    is TreeNode<T> -> ppNode(tree, print, 0, 0)
+    is Root<T> -> ppRoot(tree, print)
+    else -> throw RuntimeException("Unsupported tree type")
+}

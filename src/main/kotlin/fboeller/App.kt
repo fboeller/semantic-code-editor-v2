@@ -35,20 +35,29 @@ fun subNodeTree(elementTypes: List<Set<ElementType>>, node: Node): TreeNode<Node
     else -> tree(node, subNodesOfTypes(elementTypes[0])(node).map { subNodeTree(elementTypes.drop(1), it) })
 }
 
+fun list(command: ListCmd, appState: AppState): Tree<Node> = when {
+    appState.focus.isEmpty() -> root(
+            appState.project
+                    .map { subNodeTree(command.elementTypes, it) }
+                    .filter { it.children.isNotEmpty() }
+    )
+    else -> subNodeTree(command.elementTypes, appState.focus.last())
+}
+
 fun processCommand(command: Command): (AppState) -> AppState = when (command) {
     is ListCmd -> { appState ->
-        val result = root(
-                appState.project.compilationUnits
-                .map { subNodeTree(command.elementTypes, it) }
-                .filter { it.children.isNotEmpty() }
-        )
+        val result = list(command, appState)
         appState.copy(
                 result = result,
-                output = ppRoot(result) { oneLineInfo(it) })
+                output = ppTree(result) { oneLineInfo(it) }
+        )
     }
-    is FocusCmd -> { appState -> appState.copy(
-            output = ""
-            ) }
+    is FocusCmd -> { appState ->
+        appState.copy(
+                output = "",
+                focus = appState.focus + appState.result.retrieve(command.indexPath).data
+        )
+    }
 }
 
 fun oneLineInfo(node: Node): String = when (node) {
@@ -68,7 +77,12 @@ fun oneLineInfo(node: Node): String = when (node) {
     else -> node.toString()
 }
 
-fun repl(project: Project) {
+fun prompt(appState: AppState) = when {
+    appState.focus.isEmpty() -> ""
+    else -> oneLineInfo(appState.focus.last())
+}
+
+fun repl(project: List<CompilationUnit>) {
     val terminal = TerminalBuilder.terminal()
     val reader = LineReaderBuilder.builder()
             .terminal(terminal)
@@ -77,7 +91,7 @@ fun repl(project: Project) {
     var appState = AppState(project, true, root(listOf()), listOf(), "")
     while (appState.running) {
         try {
-            var line = reader.readLine("> ")
+            var line = reader.readLine(prompt(appState) + "> ")
             if (line == "quit" || line == "exit") {
                 appState = appState.copy(running = false)
             } else if (line.trim().isNotEmpty()) {

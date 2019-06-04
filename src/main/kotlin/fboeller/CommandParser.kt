@@ -37,7 +37,7 @@ object CommandParser : Grammar<Command>() {
 
     val number by NUMBER use { text.toInt() }
 
-    val focusCmd by FOCUS and zeroOrMore(number) map { FocusCmd(it.t2) }
+    val focusCmd by FOCUS and oneOrMore(number) map { FocusCmd(it.t2) }
 
     // All Commands
     override val rootParser by listCmd or focusCmd
