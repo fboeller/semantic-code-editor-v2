@@ -1,21 +1,34 @@
 package fboeller
 
-data class Tree<T>(val data: T, val children: List<Tree<T>>)
+interface Tree<T> {
 
-fun <T> leaf(data: T) = Tree(data, listOf())
+    val children: List<Tree<T>>
 
-fun <T> tree(data: T, children: List<Tree<T>>) = Tree(data, children)
+    fun retrieve(indices: List<Int>): Tree<T> = when {
+        indices.isEmpty() -> this
+        else -> children[indices[0]].retrieve(indices.drop(1))
+    }
+}
 
-fun <T> ppTree(tree: Tree<T>, print: (T) -> String, indentation: Int = 0, index: Int): String =
+data class Root<T>(override val children: List<TreeNode<T>>) : Tree<T>
+
+data class TreeNode<T>(val data: T, override val children: List<TreeNode<T>>) : Tree<T>
+
+fun <T> leaf(data: T) = TreeNode(data, listOf())
+
+fun <T> tree(data: T, children: List<TreeNode<T>>) = TreeNode(data, children)
+
+fun <T> root(children: List<TreeNode<T>>) = Root(children)
+
+fun <T> ppNode(tree: TreeNode<T>, print: (T) -> String, indentation: Int = 0, index: Int): String =
         ppData(tree.data, print, indentation, index) + "\n" + ppChildren(tree.children, print, indentation + 1)
 
 fun <T> ppData(data: T, print: (T) -> String, indentation: Int, index: Int): String =
         "  ".repeat(indentation) + (index + 1) + ": " + print(data)
 
-fun <T> ppChildren(children: List<Tree<T>>, print: (T) -> String, indentation: Int): String =
-        children.mapIndexed { index, tree -> ppTree(tree, print, indentation, index) }
+fun <T> ppChildren(children: List<TreeNode<T>>, print: (T) -> String, indentation: Int): String =
+        children.mapIndexed { index, tree -> ppNode(tree, print, indentation, index) }
                 .joinToString("")
 
-fun <T> ppTreeList(treeList: List<Tree<T>>, print: (T) -> String): String =
-        treeList.mapIndexed { index, tree -> ppTree(tree, print, 0, index) }
-                .joinToString("")
+fun <T> ppRoot(root: Root<T>, print: (T) -> String): String =
+        ppChildren(root.children, print, 0)

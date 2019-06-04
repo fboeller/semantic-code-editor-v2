@@ -30,21 +30,25 @@ fun subNodesOfTypes(elementTypes: Set<ElementType>): (Node) -> List<Node> = { no
     elementTypes.flatMap { subNodesOfType(it)(node) }
 }
 
-fun subNodeTree(elementTypes: List<Set<ElementType>>, node: Node): Tree<Node> = when {
+fun subNodeTree(elementTypes: List<Set<ElementType>>, node: Node): TreeNode<Node> = when {
     elementTypes.isEmpty() -> leaf(node)
     else -> tree(node, subNodesOfTypes(elementTypes[0])(node).map { subNodeTree(elementTypes.drop(1), it) })
 }
 
 fun processCommand(command: Command): (AppState) -> AppState = when (command) {
     is ListCmd -> { appState ->
-        val result = appState.project.compilationUnits
+        val result = root(
+                appState.project.compilationUnits
                 .map { subNodeTree(command.elementTypes, it) }
                 .filter { it.children.isNotEmpty() }
+        )
         appState.copy(
                 result = result,
-                output = ppTreeList(result) { oneLineInfo(it) })
+                output = ppRoot(result) { oneLineInfo(it) })
     }
-    is FocusCmd -> { appState -> appState.copy(output = "") }
+    is FocusCmd -> { appState -> appState.copy(
+            output = ""
+            ) }
 }
 
 fun oneLineInfo(node: Node): String = when (node) {
@@ -65,12 +69,12 @@ fun oneLineInfo(node: Node): String = when (node) {
 }
 
 fun repl(project: Project) {
-    val terminal = TerminalBuilder.terminal();
+    val terminal = TerminalBuilder.terminal()
     val reader = LineReaderBuilder.builder()
             .terminal(terminal)
             .build()
     val writer = terminal.writer()
-    var appState = AppState(project, true, listOf(), listOf(), "")
+    var appState = AppState(project, true, root(listOf()), listOf(), "")
     while (appState.running) {
         try {
             var line = reader.readLine("> ")
