@@ -47,32 +47,6 @@ fun processCommand(command: Command): (AppState) -> AppState = when (command) {
     is FocusCmd -> { appState -> appState.copy(output = "") }
 }
 
-val code = """
-    class A {
-      private int b;
-      private String c;
-      private static class D {
-        private int e;
-        private int q;
-      }
-      public static int method1() { return 0; }
-      private void method2(String p1) { }
-      protected interface E {
-        int f();
-        boolean g();
-        default String h() {
-          try {
-            return "abc";
-          } catch(Exception e) {
-            // Ignore
-          } finally {
-            System.out.println("Hello World!");
-          }
-        }
-      }
-    }
-    """.trimIndent()
-
 fun oneLineInfo(node: Node): String = when (node) {
     is ClassOrInterfaceDeclaration -> (if (node.isPublic) "public " else "") +
             (if (node.isPrivate) "private " else "") +
