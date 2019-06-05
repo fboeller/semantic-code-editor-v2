@@ -4,10 +4,7 @@ import com.github.h0tk3y.betterParse.grammar.parseToEnd
 import com.github.javaparser.StaticJavaParser
 import com.github.javaparser.ast.CompilationUnit
 import com.github.javaparser.ast.Node
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration
-import com.github.javaparser.ast.body.EnumDeclaration
-import com.github.javaparser.ast.body.FieldDeclaration
-import com.github.javaparser.ast.body.MethodDeclaration
+import com.github.javaparser.ast.body.*
 import com.google.common.io.LineReader
 import org.jline.reader.EndOfFileException
 import org.jline.reader.LineReaderBuilder
@@ -90,6 +87,7 @@ fun oneLineInfo(node: Node): String = when (node) {
     is MethodDeclaration -> "method " + node.nameAsString + "(" +
             node.parameters.joinToString(", ") { it.nameAsString + ": " + it.typeAsString } +
             "): " + node.typeAsString
+    is Parameter -> "parameter " + node.nameAsString + ": " + node.typeAsString
     else -> node.toString()
 }
 
