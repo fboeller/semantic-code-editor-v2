@@ -41,7 +41,7 @@ fun <T> ppRoot(root: Root<T>, print: (T) -> String): String =
         ppChildren(root.children, print, 0)
 
 fun <T> ppTree(tree: Tree<T>, print: (T) -> String): String = when (tree) {
-    is TreeNode<T> -> ppNode(tree, print, 0, 0)
+    is TreeNode<T> -> ppChildren(tree.children, print, 0)
     is Root<T> -> ppRoot(tree, print)
     else -> throw RuntimeException("Unsupported tree type")
 }
