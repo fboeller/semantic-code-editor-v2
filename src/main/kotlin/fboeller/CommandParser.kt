@@ -29,7 +29,7 @@ object CommandParser : Grammar<Command>() {
             (ENUM use { setOf(ElementType.Enum) }) or
             (ALL use { ElementType.values().toSet() })
 
-    val listCmd by LIST and zeroOrMore(elementType) map { ListCmd(it.t2) }
+    val listCmd by LIST and zeroOrMore(elementType) map { ListCmd(it.t2.ifEmpty { listOf(ElementType.values().toSet()) }) }
 
     // Focus Command
     val FOCUS by token("focus")
