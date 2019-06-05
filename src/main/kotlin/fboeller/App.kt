@@ -83,19 +83,13 @@ fun processCommand(command: Command): (AppState) -> AppState = when (command) {
 }
 
 fun oneLineInfo(node: Node): String = when (node) {
-    is ClassOrInterfaceDeclaration -> (if (node.isPublic) "public " else "") +
-            (if (node.isPrivate) "private " else "") +
-            (if (node.isProtected) "protected " else "") +
-            (if (node.isInterface) "interface " else "class ") +
-            node.nameAsString
-    is EnumDeclaration -> (if (node.isPublic) "public " else "") +
-            (if (node.isPrivate) "private " else "") +
-            (if (node.isProtected) "protected " else "") +
-            "enum " +
-            node.nameAsString
-    is CompilationUnit -> node.packageDeclaration.map { it.nameAsString }.orElse("default package")
-    is FieldDeclaration -> node.toString()
-    is MethodDeclaration -> node.getDeclarationAsString(true, true, false)
+    is ClassOrInterfaceDeclaration -> (if (node.isInterface) "interface " else "class ") + node.nameAsString
+    is EnumDeclaration -> "enum " + node.nameAsString
+    is CompilationUnit -> "package " + node.packageDeclaration.map { it.nameAsString }.orElse("default package")
+    is FieldDeclaration -> "field " + node.variables.joinToString(", ") { it.nameAsString + ": " + it.typeAsString }
+    is MethodDeclaration -> "method " + node.nameAsString + "(" +
+            node.parameters.joinToString(", ") { it.nameAsString + ": " + it.typeAsString } +
+            "): " + node.typeAsString
     else -> node.toString()
 }
 
