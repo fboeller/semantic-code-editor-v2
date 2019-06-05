@@ -54,23 +54,29 @@ fun processCommand(command: Command): (AppState) -> AppState = when (command) {
         )
     }
     is FocusCmd -> { appState ->
-        appState.copy(
-                output = "",
-                focus = when (command.path) {
-                    is IndexPath -> appState.focus + appState.result.retrieve(command.path.indexPath).data
-                    is DirectivePath -> when (command.path.pathSymbol) {
+        when (command.path) {
+            is IndexPath -> {
+                val newLastFocus = appState.result.retrieve(command.path.indexPath)?.data
+                appState.copy(
+                        output = if (newLastFocus == null) "No such element" else "",
+                        focus = appState.focus + listOfNotNull(newLastFocus)
+                )
+            }
+            is DirectivePath -> appState.copy(
+                    output = "",
+                    focus = when (command.path.pathSymbol) {
                         PathSymbol.ROOT -> listOf()
                         PathSymbol.UP -> appState.focus.dropLast(1)
                     }
-                }
-        )
+            )
+        }
     }
     is ReadCmd -> { appState ->
         appState.copy(
                 output = when {
-                    command.indexPath.isEmpty() -> appState.focus.lastOrNull()?.toString() ?: ""
-                    else -> appState.result.retrieve(command.indexPath).data.toString()
-                } + "\n"
+                    command.indexPath.isEmpty() -> appState.focus.lastOrNull()?.toString() ?: "No content in root"
+                    else -> appState.result.retrieve(command.indexPath)?.data?.toString() ?: "No such element"
+                }
         )
     }
 }
@@ -112,7 +118,7 @@ fun repl(project: List<CompilationUnit>) {
             } else if (line.trim().isNotEmpty()) {
                 val command = CommandParser.parseToEnd(line)
                 appState = processCommand(command)(appState)
-                writer.print(appState.output)
+                writer.print(appState.output + (if (appState.output.isEmpty()) "" else "\n"))
             }
         } catch (e: UserInterruptException) {
             // Ignore
