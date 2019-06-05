@@ -4,7 +4,7 @@ import com.github.h0tk3y.betterParse.combinators.*
 import com.github.h0tk3y.betterParse.grammar.Grammar
 
 enum class ElementType {
-    Class, Field, Method, Interface, Enum
+    Class, Field, Method, Interface, Enum, Parameter
 }
 
 enum class PathSymbol {
@@ -30,12 +30,14 @@ object CommandParser : Grammar<Command>() {
     val METHOD by token("method")
     val INTERFACE by token("interface")
     val ENUM by token("enum")
+    val PARAMETER by token("parameter")
     val ALL by token("\\*")
     val elementType by (CLASS use { setOf(ElementType.Class) }) or
             (FIELD use { setOf(ElementType.Field) }) or
             (METHOD use { setOf(ElementType.Method) }) or
             (INTERFACE use { setOf(ElementType.Interface) }) or
             (ENUM use { setOf(ElementType.Enum) }) or
+            (PARAMETER use { setOf(ElementType.Parameter) }) or
             (ALL use { ElementType.values().toSet() })
 
     val listCmd by -LIST and zeroOrMore(elementType) map { ListCmd(it.ifEmpty { listOf(ElementType.values().toSet()) }) }

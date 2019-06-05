@@ -24,6 +24,7 @@ fun subNodesOfType(elementType: ElementType): (Node) -> List<Node> = when (eleme
     ElementType.Method -> JavaAccessors::methods
     ElementType.Interface -> JavaAccessors::interfaces
     ElementType.Enum -> JavaAccessors::enums
+    ElementType.Parameter -> JavaAccessors::parameters
 }
 
 fun subNodesOfTypes(elementTypes: Set<ElementType>): (Node) -> List<Node> = { node ->

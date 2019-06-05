@@ -2,10 +2,7 @@ package fboeller
 
 import com.github.javaparser.ast.CompilationUnit
 import com.github.javaparser.ast.Node
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration
-import com.github.javaparser.ast.body.EnumDeclaration
-import com.github.javaparser.ast.body.FieldDeclaration
-import com.github.javaparser.ast.body.MethodDeclaration
+import com.github.javaparser.ast.body.*
 
 object JavaAccessors {
 
@@ -62,6 +59,11 @@ object JavaAccessors {
         is ClassOrInterfaceDeclaration -> node.methods
         is EnumDeclaration -> node.methods
         is CompilationUnit -> listOf()
+        else -> listOf()
+    }
+
+    fun parameters(node: Node): List<Parameter> = when (node) {
+        is MethodDeclaration -> node.parameters
         else -> listOf()
     }
 }
