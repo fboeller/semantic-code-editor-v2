@@ -7,9 +7,17 @@ enum class ElementType {
     Class, Field, Method, Interface, Enum
 }
 
+enum class PathSymbol {
+    UP, ROOT
+}
+
 sealed class Command
 data class ListCmd(val elementTypes: List<Set<ElementType>>) : Command()
-data class FocusCmd(val indexPath: List<Int>) : Command()
+data class FocusCmd(val path: Path) : Command()
+
+sealed class Path
+data class IndexPath(val indexPath: List<Int>) : Path()
+data class DirectivePath(val pathSymbol: PathSymbol) : Path()
 
 object CommandParser : Grammar<Command>() {
     val ws by token("\\s+", ignore = true)
@@ -29,15 +37,21 @@ object CommandParser : Grammar<Command>() {
             (ENUM use { setOf(ElementType.Enum) }) or
             (ALL use { ElementType.values().toSet() })
 
-    val listCmd by LIST and zeroOrMore(elementType) map { ListCmd(it.t2.ifEmpty { listOf(ElementType.values().toSet()) }) }
+    val listCmd by -LIST and zeroOrMore(elementType) map { ListCmd(it.ifEmpty { listOf(ElementType.values().toSet()) }) }
 
     // Focus Command
     val FOCUS by token("focus")
     val NUMBER by token("\\d+")
+    val UP by token("..")
+    val ROOT by token("/")
 
     val number by NUMBER use { text.toInt() }
+    val up by UP use { PathSymbol.UP }
+    val root by ROOT use { PathSymbol.ROOT }
+    val pathSymbol by up or root map { DirectivePath(it) }
+    val indexPath by oneOrMore(number) map { IndexPath(it) }
 
-    val focusCmd by FOCUS and oneOrMore(number) map { FocusCmd(it.t2) }
+    val focusCmd by -FOCUS and (indexPath or pathSymbol) map { FocusCmd(it) }
 
     // All Commands
     override val rootParser by listCmd or focusCmd

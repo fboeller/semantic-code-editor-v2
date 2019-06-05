@@ -56,7 +56,13 @@ fun processCommand(command: Command): (AppState) -> AppState = when (command) {
     is FocusCmd -> { appState ->
         appState.copy(
                 output = "",
-                focus = appState.focus + appState.result.retrieve(command.indexPath).data
+                focus = when (command.path) {
+                    is IndexPath -> appState.focus + appState.result.retrieve(command.path.indexPath).data
+                    is DirectivePath -> when (command.path.pathSymbol) {
+                        PathSymbol.ROOT -> listOf()
+                        PathSymbol.UP -> appState.focus.dropLast(1)
+                    }
+                }
         )
     }
 }
