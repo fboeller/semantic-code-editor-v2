@@ -14,6 +14,7 @@ enum class PathSymbol {
 sealed class Command
 data class ListCmd(val elementTypes: List<Set<ElementType>>) : Command()
 data class FocusCmd(val path: Path) : Command()
+data class ReadCmd(val indexPath: List<Int>) : Command()
 
 sealed class Path
 data class IndexPath(val indexPath: List<Int>) : Path()
@@ -42,7 +43,7 @@ object CommandParser : Grammar<Command>() {
     // Focus Command
     val FOCUS by token("focus")
     val NUMBER by token("\\d+")
-    val UP by token("..")
+    val UP by token("\\.\\.")
     val ROOT by token("/")
 
     val number by NUMBER use { text.toInt() }
@@ -53,6 +54,11 @@ object CommandParser : Grammar<Command>() {
 
     val focusCmd by -FOCUS and (indexPath or pathSymbol) map { FocusCmd(it) }
 
+    // Read Command
+    val READ by token("read")
+
+    val readCmd by -READ and zeroOrMore(number) map { ReadCmd(it) }
+
     // All Commands
-    override val rootParser by listCmd or focusCmd
+    override val rootParser by listCmd or focusCmd or readCmd
 }

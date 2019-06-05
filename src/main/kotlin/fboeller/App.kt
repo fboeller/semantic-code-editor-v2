@@ -65,6 +65,14 @@ fun processCommand(command: Command): (AppState) -> AppState = when (command) {
                 }
         )
     }
+    is ReadCmd -> { appState ->
+        appState.copy(
+                output = when {
+                    command.indexPath.isEmpty() -> appState.focus.lastOrNull()?.toString() ?: ""
+                    else -> appState.result.retrieve(command.indexPath).data.toString()
+                } + "\n"
+        )
+    }
 }
 
 fun oneLineInfo(node: Node): String = when (node) {
