@@ -38,7 +38,8 @@ fun subNodeTree(elementTypes: List<Set<ElementType>>, node: Node): TreeNode<Node
 fun list(command: ListCmd, appState: AppState): Tree<Node> = when {
     appState.focus.isEmpty() -> root(
             appState.project
-                    .map { subNodeTree(command.elementTypes, it) }
+                    .groupBy({ oneLineInfo(it) }, { subNodeTree(command.elementTypes, it) })
+                    .map { tree(it.value[0].data, it.value.flatMap { it.children }) }
                     .filter { it.children.isNotEmpty() }
     )
     else -> subNodeTree(command.elementTypes, appState.focus.last())
