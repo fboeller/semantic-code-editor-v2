@@ -27,6 +27,7 @@ fun subNodesOfType(elementType: ElementType): (Node) -> List<Node> = when (eleme
     ElementType.Enum -> JavaAccessors::enums
     ElementType.Parameter -> JavaAccessors::parameters
     ElementType.Name -> JavaAccessors::names
+    ElementType.Type -> JavaAccessors::types
 }
 
 fun subNodesOfTypes(elementTypes: Set<ElementType>): (Node) -> List<Node> = { node ->
@@ -94,6 +95,7 @@ fun oneLineInfo(node: Node): String = when (node) {
             "): " + node.typeAsString
     is Parameter -> "parameter " + node.nameAsString + ": " + node.typeAsString
     is SimpleName -> "name " + node.asString()
+    is Type -> "type " + node.asString()
     else -> node.toString()
 }
 

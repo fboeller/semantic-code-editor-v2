@@ -4,7 +4,7 @@ import com.github.h0tk3y.betterParse.combinators.*
 import com.github.h0tk3y.betterParse.grammar.Grammar
 
 enum class ElementType {
-    Class, Field, Method, Interface, Enum, Parameter, Name
+    Class, Field, Method, Interface, Enum, Parameter, Name, Type
 }
 
 val scopeTypes: Set<ElementType> = setOf(
@@ -40,6 +40,7 @@ object CommandParser : Grammar<Command>() {
     val ENUM by token("enum")
     val PARAMETER by token("parameter")
     val NAME by token("name")
+    val TYPE by token("type")
     val ALL by token("\\*")
     val elementType by (CLASS use { setOf(ElementType.Class) }) or
             (FIELD use { setOf(ElementType.Field) }) or
@@ -48,6 +49,7 @@ object CommandParser : Grammar<Command>() {
             (ENUM use { setOf(ElementType.Enum) }) or
             (PARAMETER use { setOf(ElementType.Parameter) }) or
             (NAME use { setOf(ElementType.Name) }) or
+            (TYPE use { setOf(ElementType.Type) }) or
             (ALL use { scopeTypes })
 
     val listCmd by -LIST and zeroOrMore(elementType) map { ListCmd(it.ifEmpty { listOf(scopeTypes) }) }

@@ -5,6 +5,8 @@ import com.github.javaparser.ast.Node
 import com.github.javaparser.ast.body.*
 import com.github.javaparser.ast.expr.SimpleName
 import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName
+import com.github.javaparser.ast.nodeTypes.NodeWithType
+import com.github.javaparser.ast.type.Type
 
 object JavaAccessors {
 
@@ -71,6 +73,11 @@ object JavaAccessors {
 
     fun names(node: Node): List<SimpleName> = when (node) {
         is NodeWithSimpleName<*> -> listOf(node.name)
+        else -> listOf()
+    }
+
+    fun types(node: Node): List<Type> = when (node) {
+        is NodeWithType<*, *> -> listOf(node.type)
         else -> listOf()
     }
 }
