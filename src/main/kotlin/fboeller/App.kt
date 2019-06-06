@@ -5,6 +5,10 @@ import com.github.javaparser.StaticJavaParser
 import com.github.javaparser.ast.CompilationUnit
 import com.github.javaparser.ast.Node
 import com.github.javaparser.ast.body.*
+import com.github.javaparser.ast.expr.SimpleName
+import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName
+import com.github.javaparser.ast.nodeTypes.NodeWithType
+import com.github.javaparser.ast.type.Type
 import com.google.common.io.LineReader
 import org.jline.reader.EndOfFileException
 import org.jline.reader.LineReaderBuilder
@@ -22,6 +26,7 @@ fun subNodesOfType(elementType: ElementType): (Node) -> List<Node> = when (eleme
     ElementType.Interface -> JavaAccessors::interfaces
     ElementType.Enum -> JavaAccessors::enums
     ElementType.Parameter -> JavaAccessors::parameters
+    ElementType.Name -> JavaAccessors::names
 }
 
 fun subNodesOfTypes(elementTypes: Set<ElementType>): (Node) -> List<Node> = { node ->
@@ -88,6 +93,7 @@ fun oneLineInfo(node: Node): String = when (node) {
             node.parameters.joinToString(", ") { it.nameAsString + ": " + it.typeAsString } +
             "): " + node.typeAsString
     is Parameter -> "parameter " + node.nameAsString + ": " + node.typeAsString
+    is SimpleName -> "name " + node.asString()
     else -> node.toString()
 }
 

@@ -3,6 +3,8 @@ package fboeller
 import com.github.javaparser.ast.CompilationUnit
 import com.github.javaparser.ast.Node
 import com.github.javaparser.ast.body.*
+import com.github.javaparser.ast.expr.SimpleName
+import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName
 
 object JavaAccessors {
 
@@ -64,6 +66,11 @@ object JavaAccessors {
 
     fun parameters(node: Node): List<Parameter> = when (node) {
         is MethodDeclaration -> node.parameters
+        else -> listOf()
+    }
+
+    fun names(node: Node): List<SimpleName> = when (node) {
+        is NodeWithSimpleName<*> -> listOf(node.name)
         else -> listOf()
     }
 }

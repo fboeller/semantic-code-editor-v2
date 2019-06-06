@@ -4,8 +4,16 @@ import com.github.h0tk3y.betterParse.combinators.*
 import com.github.h0tk3y.betterParse.grammar.Grammar
 
 enum class ElementType {
-    Class, Field, Method, Interface, Enum, Parameter
+    Class, Field, Method, Interface, Enum, Parameter, Name
 }
+
+val scopeTypes: Set<ElementType> = setOf(
+        ElementType.Class,
+        ElementType.Field,
+        ElementType.Method,
+        ElementType.Interface,
+        ElementType.Enum
+)
 
 enum class PathSymbol {
     UP, ROOT
@@ -31,6 +39,7 @@ object CommandParser : Grammar<Command>() {
     val INTERFACE by token("interface")
     val ENUM by token("enum")
     val PARAMETER by token("parameter")
+    val NAME by token("name")
     val ALL by token("\\*")
     val elementType by (CLASS use { setOf(ElementType.Class) }) or
             (FIELD use { setOf(ElementType.Field) }) or
@@ -38,9 +47,10 @@ object CommandParser : Grammar<Command>() {
             (INTERFACE use { setOf(ElementType.Interface) }) or
             (ENUM use { setOf(ElementType.Enum) }) or
             (PARAMETER use { setOf(ElementType.Parameter) }) or
-            (ALL use { ElementType.values().toSet() })
+            (NAME use { setOf(ElementType.Name) }) or
+            (ALL use { scopeTypes })
 
-    val listCmd by -LIST and zeroOrMore(elementType) map { ListCmd(it.ifEmpty { listOf(ElementType.values().toSet()) }) }
+    val listCmd by -LIST and zeroOrMore(elementType) map { ListCmd(it.ifEmpty { listOf(scopeTypes) }) }
 
     // Focus Command
     val FOCUS by token("focus")
