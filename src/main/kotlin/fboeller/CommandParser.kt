@@ -2,6 +2,8 @@ package fboeller
 
 import com.github.h0tk3y.betterParse.combinators.*
 import com.github.h0tk3y.betterParse.grammar.Grammar
+import com.github.h0tk3y.betterParse.grammar.parser
+import com.github.h0tk3y.betterParse.parser.Parser
 import com.github.javaparser.ast.Node
 
 enum class ElementType {
@@ -15,6 +17,8 @@ val scopeTypes: Set<ElementType> = setOf(
         ElementType.Interface,
         ElementType.Enum
 )
+
+val allSubNodes = subNodesOfTypes(scopeTypes)
 
 enum class PathSymbol {
     UP, ROOT
@@ -56,14 +60,29 @@ object CommandParser : Grammar<Command>() {
             (TYPE use { setOf(ElementType.Type) }) or
             (ALL use { scopeTypes })
 
+    val AND by token("&&")
+    val LPAR by token("\\(")
+    val RPAR by token("\\)")
+
     val STRING_LITERAL by token("\"[^\\\\\"]*(\\\\[\"nrtbf\\\\][^\\\\\"]*)*\"")
     val stringLiteral by STRING_LITERAL use { text.substring(1, text.length - 1) }
 
-    val levelFilter by (stringLiteral map { LevelFilter(subNodesOfTypes(scopeTypes), hasName(it)) }) or
-            (elementType map { LevelFilter(subNodesOfTypes(it)) { true } })
+    val nodeProducer by elementType map { subNodesOfTypes(it) }
 
-    val listCmd by -LIST and zeroOrMore(levelFilter) map
-            { ListCmd(it.ifEmpty { listOf(LevelFilter(subNodesOfTypes(scopeTypes)) { true }) }) }
+    val singleFilter by stringLiteral map { hasName(it) }
+
+    val multipleFilters by leftAssociative(singleFilter, AND) { l, _, r -> { node -> l(node) && r(node) } }
+
+    val levelFilter: Parser<LevelFilter> =
+            (nodeProducer and -AND and multipleFilters map { (producer, filter) -> LevelFilter(producer, filter) }) or
+                    (nodeProducer map { LevelFilter(it, { true }) }) or
+                    (multipleFilters map { LevelFilter(allSubNodes, it) })
+
+    val levelFilterExpr: Parser<LevelFilter> by levelFilter or
+            (-LPAR and parser(this::levelFilterExpr) and -RPAR)
+
+    val listCmd by -LIST and zeroOrMore(levelFilterExpr) map
+            { ListCmd(it.ifEmpty { listOf(LevelFilter(allSubNodes) { true }) }) }
 
     // Focus Command
     val FOCUS by token("focus")
