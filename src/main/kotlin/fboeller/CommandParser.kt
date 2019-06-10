@@ -2,6 +2,7 @@ package fboeller
 
 import com.github.h0tk3y.betterParse.combinators.*
 import com.github.h0tk3y.betterParse.grammar.Grammar
+import com.github.javaparser.ast.Node
 
 enum class ElementType {
     Class, Field, Method, Interface, Enum, Parameter, Name, Type
@@ -20,13 +21,16 @@ enum class PathSymbol {
 }
 
 sealed class Command
-data class ListCmd(val elementTypes: List<Set<ElementType>>) : Command()
+data class ListCmd(val levelFilters: List<LevelFilter>) : Command()
 data class FocusCmd(val path: Path) : Command()
 data class ReadCmd(val indexPath: List<Int>) : Command()
 
 sealed class Path
 data class IndexPath(val indexPath: List<Int>) : Path()
 data class DirectivePath(val pathSymbol: PathSymbol) : Path()
+
+data class LevelFilter(val producer: (Node) -> List<Node>,
+                       val filter: (Node) -> Boolean)
 
 object CommandParser : Grammar<Command>() {
     val ws by token("\\s+", ignore = true)
@@ -52,7 +56,14 @@ object CommandParser : Grammar<Command>() {
             (TYPE use { setOf(ElementType.Type) }) or
             (ALL use { scopeTypes })
 
-    val listCmd by -LIST and zeroOrMore(elementType) map { ListCmd(it.ifEmpty { listOf(scopeTypes) }) }
+    val STRING_LITERAL by token("\"[^\\\\\"]*(\\\\[\"nrtbf\\\\][^\\\\\"]*)*\"")
+    val stringLiteral by STRING_LITERAL use { text.substring(1, text.length - 1) }
+
+    val levelFilter by (stringLiteral map { LevelFilter(subNodesOfTypes(scopeTypes), hasName(it)) }) or
+            (elementType map { LevelFilter(subNodesOfTypes(it)) { true } })
+
+    val listCmd by -LIST and zeroOrMore(levelFilter) map
+            { ListCmd(it.ifEmpty { listOf(LevelFilter(subNodesOfTypes(scopeTypes)) { true }) }) }
 
     // Focus Command
     val FOCUS by token("focus")

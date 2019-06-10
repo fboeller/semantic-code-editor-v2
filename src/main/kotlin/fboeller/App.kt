@@ -6,6 +6,7 @@ import com.github.javaparser.ast.CompilationUnit
 import com.github.javaparser.ast.Node
 import com.github.javaparser.ast.body.*
 import com.github.javaparser.ast.expr.SimpleName
+import com.github.javaparser.ast.nodeTypes.NodeWithName
 import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName
 import com.github.javaparser.ast.nodeTypes.NodeWithType
 import com.github.javaparser.ast.type.Type
@@ -30,23 +31,30 @@ fun subNodesOfType(elementType: ElementType): (Node) -> List<Node> = when (eleme
     ElementType.Type -> JavaAccessors::types
 }
 
-fun subNodesOfTypes(elementTypes: Set<ElementType>): (Node) -> List<Node> = { node ->
-    elementTypes.flatMap { subNodesOfType(it)(node) }
-}
+fun hasName(name: String): (Node) -> Boolean = { node -> when (node) {
+    is NodeWithSimpleName<*> -> node.nameAsString.startsWith(name)
+    is NodeWithName<*> -> node.nameAsString.startsWith(name)
+    else -> false
+}}
 
-fun subNodeTree(elementTypes: List<Set<ElementType>>, node: Node): TreeNode<Node> = when {
-    elementTypes.isEmpty() -> leaf(node)
-    else -> tree(node, subNodesOfTypes(elementTypes[0])(node).map { subNodeTree(elementTypes.drop(1), it) })
-}
+fun subNodesOfTypes(elementTypes: Set<ElementType>): (Node) -> List<Node> =
+        { node -> elementTypes.flatMap { subNodesOfType(it)(node) } }
+
+fun subNodeTree(levelFilter: List<LevelFilter>): (Node) -> TreeNode<Node> = { node -> when {
+    levelFilter.isEmpty() -> leaf(node)
+    else -> tree(node, levelFilter[0].producer(node)
+            .filter(levelFilter[0].filter)
+            .map(subNodeTree(levelFilter.drop(1))))
+}}
 
 fun list(command: ListCmd, appState: AppState): Tree<Node> = when {
     appState.focus.isEmpty() -> root(
             appState.project
-                    .groupBy({ oneLineInfo(it) }, { subNodeTree(command.elementTypes, it) })
+                    .groupBy(oneLineInfo, subNodeTree(command.levelFilters))
                     .map { tree(it.value[0].data, it.value.flatMap { it.children }) }
                     .filter { it.children.isNotEmpty() }
     )
-    else -> subNodeTree(command.elementTypes, appState.focus.last())
+    else -> subNodeTree(command.levelFilters)(appState.focus.last())
 }
 
 fun processCommand(command: Command): (AppState) -> AppState = when (command) {
@@ -54,7 +62,7 @@ fun processCommand(command: Command): (AppState) -> AppState = when (command) {
         val result = list(command, appState)
         appState.copy(
                 result = result,
-                output = ppTree(result) { oneLineInfo(it) }
+                output = ppTree(result, oneLineInfo)
         )
     }
     is FocusCmd -> { appState ->
@@ -85,7 +93,7 @@ fun processCommand(command: Command): (AppState) -> AppState = when (command) {
     }
 }
 
-fun oneLineInfo(node: Node): String = when (node) {
+val oneLineInfo: (Node) -> String = { node -> when (node) {
     is ClassOrInterfaceDeclaration -> (if (node.isInterface) "interface " else "class ") + node.nameAsString
     is EnumDeclaration -> "enum " + node.nameAsString
     is CompilationUnit -> "package " + node.packageDeclaration.map { it.nameAsString }.orElse("default package")
@@ -97,7 +105,7 @@ fun oneLineInfo(node: Node): String = when (node) {
     is SimpleName -> "name " + node.asString()
     is Type -> "type " + node.asString()
     else -> node.toString()
-}
+}}
 
 fun prompt(appState: AppState) = when {
     appState.focus.isEmpty() -> ""
