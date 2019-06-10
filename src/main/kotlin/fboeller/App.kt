@@ -8,6 +8,7 @@ import com.github.javaparser.ast.body.*
 import com.github.javaparser.ast.expr.SimpleName
 import com.github.javaparser.ast.nodeTypes.NodeWithName
 import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName
+import com.github.javaparser.ast.nodeTypes.NodeWithType
 import com.github.javaparser.ast.type.Type
 import org.jline.reader.EndOfFileException
 import org.jline.reader.LineReaderBuilder
@@ -29,6 +30,11 @@ fun subNodesOfType(elementType: ElementType): (Node) -> List<Node> = when (eleme
 fun hasName(name: String): (Node) -> Boolean = { node -> when (node) {
     is NodeWithSimpleName<*> -> node.nameAsString.startsWith(name)
     is NodeWithName<*> -> node.nameAsString.startsWith(name)
+    else -> false
+}}
+
+fun hasType(type: String): (Node) -> Boolean = { node -> when (node) {
+    is NodeWithType<*, *> -> node.typeAsString.startsWith(type)
     else -> false
 }}
 

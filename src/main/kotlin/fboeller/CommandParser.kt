@@ -71,7 +71,8 @@ object CommandParser : Grammar<Command>() {
     val nodeProducer by elementType map { subNodesOfTypes(it) }
 
     // TODO: Disallow name filter for type and name element types
-    val singleFilter by (stringLiteral or (-NAME and stringLiteral) map { hasName(it) })
+    val singleFilter by (stringLiteral or (-NAME and stringLiteral) map { hasName(it) }) or
+            (-TYPE and stringLiteral map { hasType(it) })
 
     val multipleFilters by leftAssociative(singleFilter, AND) { l, _, r -> { node -> l(node) && r(node) } }
 
