@@ -63,18 +63,20 @@ object CommandParser : Grammar<Command>() {
     val AND by token("&&")
     val LPAR by token("\\(")
     val RPAR by token("\\)")
+    val WITH by token("with")
 
     val STRING_LITERAL by token("\"[^\\\\\"]*(\\\\[\"nrtbf\\\\][^\\\\\"]*)*\"")
     val stringLiteral by STRING_LITERAL use { text.substring(1, text.length - 1) }
 
     val nodeProducer by elementType map { subNodesOfTypes(it) }
 
-    val singleFilter by stringLiteral map { hasName(it) }
+    // TODO: Disallow name filter for type and name element types
+    val singleFilter by (stringLiteral or (-NAME and stringLiteral) map { hasName(it) })
 
     val multipleFilters by leftAssociative(singleFilter, AND) { l, _, r -> { node -> l(node) && r(node) } }
 
     val levelFilter: Parser<LevelFilter> =
-            (nodeProducer and -AND and multipleFilters map { (producer, filter) -> LevelFilter(producer, filter) }) or
+            (nodeProducer and -WITH and multipleFilters map { (producer, filter) -> LevelFilter(producer, filter) }) or
                     (nodeProducer map { LevelFilter(it, { true }) }) or
                     (multipleFilters map { LevelFilter(allSubNodes, it) })
 
