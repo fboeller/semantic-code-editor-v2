@@ -27,34 +27,41 @@ fun subNodesOfType(elementType: ElementType): (Node) -> List<Node> = when (eleme
     ElementType.Type -> JavaAccessors::types
 }
 
-fun hasName(name: String): (Node) -> Boolean = { node -> when (node) {
-    is NodeWithSimpleName<*> -> node.nameAsString.startsWith(name)
-    is NodeWithName<*> -> node.nameAsString.startsWith(name)
-    else -> false
-}}
+fun hasName(name: String): (Node) -> Boolean = { node ->
+    when (node) {
+        is NodeWithSimpleName<*> -> node.nameAsString.startsWith(name)
+        is NodeWithName<*> -> node.nameAsString.startsWith(name)
+        else -> false
+    }
+}
 
-fun hasType(type: String): (Node) -> Boolean = { node -> when (node) {
-    is NodeWithType<*, *> -> node.typeAsString.startsWith(type)
-    else -> false
-}}
+fun hasType(type: String): (Node) -> Boolean = { node ->
+    when (node) {
+        is NodeWithType<*, *> -> node.typeAsString.startsWith(type)
+        else -> false
+    }
+}
 
 fun subNodesOfTypes(elementTypes: Set<ElementType>): (Node) -> List<Node> =
         { node -> elementTypes.flatMap { subNodesOfType(it)(node) } }
 
-fun subNodeTree(levelFilter: List<LevelFilter>): (Node) -> TreeNode<Node> = { node -> when {
-    levelFilter.isEmpty() -> leaf(node)
-    else -> tree(node, levelFilter[0].producer(node)
-            .filter(levelFilter[0].filter)
-            .map(subNodeTree(levelFilter.drop(1))))
-}}
+fun produceAndFilter(levelFilter: LevelFilter): (Node) -> List<Node> =
+        { node -> levelFilter.producer(node).filter(levelFilter.filter) }
+
+fun subNodeTree(levelFilter: List<LevelFilter>): (Node) -> TreeNode<Node> = { node ->
+    when {
+        levelFilter.isEmpty() -> leaf(node)
+        else -> tree(node, produceAndFilter(levelFilter[0])(node).map(subNodeTree(levelFilter.drop(1))))
+    }
+}
 
 fun list(command: ListCmd, appState: AppState): Tree<Node> = when {
     appState.focus.isEmpty() -> root(
             appState.project
                     .groupBy(oneLineInfo, subNodeTree(command.levelFilters))
-                    .map { tree(it.value[0].data, it.value.flatMap { it.children }) }
-                    .filter { it.children.isNotEmpty() }
-    )
+                    .map { it.value }
+                    .map { subNodes -> tree(subNodes[0].data, subNodes.flatMap { it.children }) }
+    ).cutEarlyLeafs(command.levelFilters.size)
     else -> subNodeTree(command.levelFilters)(appState.focus.last())
 }
 
@@ -94,19 +101,21 @@ fun processCommand(command: Command): (AppState) -> AppState = when (command) {
     }
 }
 
-val oneLineInfo: (Node) -> String = { node -> when (node) {
-    is ClassOrInterfaceDeclaration -> (if (node.isInterface) "interface " else "class ") + node.nameAsString
-    is EnumDeclaration -> "enum " + node.nameAsString
-    is CompilationUnit -> "package " + node.packageDeclaration.map { it.nameAsString }.orElse("default package")
-    is FieldDeclaration -> "field " + node.variables.joinToString(", ") { it.nameAsString + ": " + it.typeAsString }
-    is MethodDeclaration -> "method " + node.nameAsString + "(" +
-            node.parameters.joinToString(", ") { it.nameAsString + ": " + it.typeAsString } +
-            "): " + node.typeAsString
-    is Parameter -> "parameter " + node.nameAsString + ": " + node.typeAsString
-    is SimpleName -> "name " + node.asString()
-    is Type -> "type " + node.asString()
-    else -> node.toString()
-}}
+val oneLineInfo: (Node) -> String = { node ->
+    when (node) {
+        is ClassOrInterfaceDeclaration -> (if (node.isInterface) "interface " else "class ") + node.nameAsString
+        is EnumDeclaration -> "enum " + node.nameAsString
+        is CompilationUnit -> "package " + node.packageDeclaration.map { it.nameAsString }.orElse("default package")
+        is FieldDeclaration -> "field " + node.variables.joinToString(", ") { it.nameAsString + ": " + it.typeAsString }
+        is MethodDeclaration -> "method " + node.nameAsString + "(" +
+                node.parameters.joinToString(", ") { it.nameAsString + ": " + it.typeAsString } +
+                "): " + node.typeAsString
+        is Parameter -> "parameter " + node.nameAsString + ": " + node.typeAsString
+        is SimpleName -> "name " + node.asString()
+        is Type -> "type " + node.asString()
+        else -> node.toString()
+    }
+}
 
 fun prompt(appState: AppState) = when {
     appState.focus.isEmpty() -> ""

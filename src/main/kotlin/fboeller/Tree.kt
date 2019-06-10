@@ -3,6 +3,7 @@ package fboeller
 interface Tree<T> {
     val children: List<Tree<T>>
     fun retrieve(indices: List<Int>): TreeNode<T>?
+    fun cutEarlyLeafs(level: Int): Tree<T>
 }
 
 data class Root<T>(override val children: List<TreeNode<T>>) : Tree<T> {
@@ -11,6 +12,10 @@ data class Root<T>(override val children: List<TreeNode<T>>) : Tree<T> {
         indices.isEmpty() -> null
         else -> children.elementAtOrNull(indices[0])?.retrieve(indices.drop(1))
     }
+
+    override fun cutEarlyLeafs(level: Int): Root<T> =
+            if (level <= 0) this
+            else root(children.map { it.cutEarlyLeafs(level - 1) })
 }
 
 data class TreeNode<T>(val data: T, override val children: List<TreeNode<T>>) : Tree<T> {
@@ -19,6 +24,15 @@ data class TreeNode<T>(val data: T, override val children: List<TreeNode<T>>) : 
         indices.isEmpty() -> this
         else -> children.elementAtOrNull(indices[0])?.retrieve(indices.drop(1))
     }
+
+    override fun cutEarlyLeafs(level: Int): TreeNode<T> =
+        if (level <= 0) this
+        else {
+            val newChildren = children
+                    .map { it.cutEarlyLeafs(level - 1) }
+                    .filter { it.children.isNotEmpty() }
+            tree(data, newChildren)
+        }
 }
 
 fun <T> leaf(data: T) = TreeNode(data, listOf())
