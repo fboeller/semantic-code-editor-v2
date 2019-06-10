@@ -1,24 +1,19 @@
 package fboeller
 
 import com.github.h0tk3y.betterParse.grammar.parseToEnd
-import com.github.javaparser.StaticJavaParser
+import com.github.h0tk3y.betterParse.parser.ParseException
 import com.github.javaparser.ast.CompilationUnit
 import com.github.javaparser.ast.Node
 import com.github.javaparser.ast.body.*
 import com.github.javaparser.ast.expr.SimpleName
 import com.github.javaparser.ast.nodeTypes.NodeWithName
 import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName
-import com.github.javaparser.ast.nodeTypes.NodeWithType
 import com.github.javaparser.ast.type.Type
-import com.google.common.io.LineReader
 import org.jline.reader.EndOfFileException
 import org.jline.reader.LineReaderBuilder
 import org.jline.reader.UserInterruptException
 import org.jline.terminal.TerminalBuilder
 import java.nio.file.Paths
-import java.util.*
-import java.util.function.Function
-import javax.xml.bind.Element
 
 fun subNodesOfType(elementType: ElementType): (Node) -> List<Node> = when (elementType) {
     ElementType.Class -> JavaAccessors::classes
@@ -125,8 +120,11 @@ fun repl(project: List<CompilationUnit>) {
             if (line == "quit" || line == "exit") {
                 appState = appState.copy(running = false)
             } else if (line.trim().isNotEmpty()) {
-                val command = CommandParser.parseToEnd(line)
-                appState = processCommand(command)(appState)
+                appState = try {
+                    processCommand(CommandParser.parseToEnd(line))(appState)
+                } catch (e: ParseException) {
+                    appState.copy(output = e.message ?: "Unknown command")
+                }
                 writer.print(appState.output + (if (appState.output.isEmpty()) "" else "\n"))
             }
         } catch (e: UserInterruptException) {
