@@ -1,0 +1,13 @@
+name: Build with Gradlew
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build with Gradle
+      run: ./gradlew build
